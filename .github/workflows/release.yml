@@ -1,0 +1,61 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: jdx/mise-action@v2
+        with:
+          experimental: true
+
+      - name: Refuse a tag that disagrees with VERSION
+        run: |
+          tagged="${GITHUB_REF_NAME#v}"
+          declared="$(cat VERSION)"
+          if [ "$tagged" != "$declared" ]; then
+            echo "tag ${GITHUB_REF_NAME} does not match VERSION ${declared}" >&2
+            exit 1
+          fi
+
+      - name: Verify the batch builds and matches the lockfile
+        run: just ci
+
+      - name: Pack the release artifacts
+        run: just package
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(cat VERSION)"
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "agent-kit ${GITHUB_REF_NAME}" \
+            --notes-file - \
+            "release/agent-kit_v${version}.tar.gz" \
+            "release/agent-kit_${version}_checksums.txt" <<NOTES
+          One batch of agent skills for Claude Code, Codex and OpenCode.
+
+          Pin this version and verify one checksum:
+
+          \`\`\`sh
+          gh release download ${GITHUB_REF_NAME} --repo ${GITHUB_REPOSITORY} --pattern 'agent-kit_*'
+          sha256sum --check "agent-kit_${version}_checksums.txt"
+          tar xzf "agent-kit_v${version}.tar.gz"
+          \`\`\`
+
+          Skills and their upstream provenance are recorded in \`agent-kit.lock.json\`.
+          NOTES

@@ -1,0 +1,32 @@
+{
+  "name": "agent-kit",
+  "version": "0.1.0",
+  "description": "One versioned batch of agent skills that loads identically in Claude Code, Codex and OpenCode.",
+  "author": {
+    "name": "janpuc",
+    "url": "https://github.com/janpuc"
+  },
+  "homepage": "https://github.com/janpuc/agent-kit",
+  "repository": "https://github.com/janpuc/agent-kit",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "agents",
+    "claude-code",
+    "codex",
+    "opencode"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Kit",
+    "shortDescription": "Portable engineering skills for three harnesses",
+    "longDescription": "Vendored, checksummed engineering skills covering test-driven development, bug diagnosis, research, codebase design, triage and writing for agents. One batch version, one checksum, identical in Claude Code, Codex and OpenCode.",
+    "developerName": "janpuc",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://github.com/janpuc/agent-kit"
+  }
+}

@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01M0YPE4D6F1D10YX8TWWDN0HV
+  created: "2026-08-26T09:29:20Z"
+spec:
+  target:
+    file: .koment/policy.yaml
+  type: invariant
+  title: skills/ is exempt only while it stays byte-identical to vendor/
+  body: |-
+    Every file under skills/ in this release is a verbatim upstream copy, so its
+    comments are upstream's prose, not ours. One of them,
+    skills/diagnosing-bugs/scripts/hitl-loop.template.sh, is a template the user
+    is meant to copy and edit, and its comments are its instructions. Converting
+    them would edit vendored content, break the canonical-equals-vendored
+    invariant, and invalidate every sha256 in agent-kit.lock.json.
+
+    This exemption is deliberately broader than the files that need it, so it is
+    earned rather than assumed: scripts/verify.py runs
+    verify_canonical_matches_vendor, which fails the build the moment any file
+    under skills/ stops being byte-identical to its counterpart under vendor/.
+    Hand-written prose therefore cannot arrive under this exemption unnoticed.
+
+    When the first original skill is authored here, that check will fail. That
+    is the intended signal: narrow this pattern and the check together, in the
+    same change, rather than letting original prose inherit an exemption meant
+    for upstream text.
+  anchor:
+    scope: excerpt
+    excerpt: '      - skills/**'
+    before: |2-
+            - .vendor-cache/**
+            - '**/.vendor-cache/**'
+            - release/**
+    after: |2-
+        agents:
+          adapters:
+            - claude
+  author:
+    name: claude-code
+    kind: agent
+    source: session
+  git:
+    commit: dc5c2adee9bd68773e2e2bff62e637ac0082931b
+    path: .koment/policy.yaml
+    line: 42
+status:
+  lastSeenLine: 42
+  resolution: ok
+  resolvedAt: "2026-08-26T09:29:20Z"
+  resolvedCommit: dc5c2adee9bd68773e2e2bff62e637ac0082931b

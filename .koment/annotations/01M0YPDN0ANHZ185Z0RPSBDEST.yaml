@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01M0YPDN0ANHZ185Z0RPSBDEST
+  created: "2026-08-26T09:29:04Z"
+spec:
+  target:
+    file: .claude-plugin/marketplace.json
+  type: why
+  title: The repository root is the plugin, so skills/ is never copied twice
+  body: |-
+    PLAN.md section 5 sketched separate plugin roots at plugins/claude/ and
+    plugins/codex/, each holding its own manifest. That layout cannot work from
+    a git checkout: a plugin only ships the skills that live inside its own
+    root, so plugins/claude/skills/ would have to be a committed second copy of
+    skills/ — exactly the "same content in two directories" that AGENTS.md
+    forbids.
+
+    Pointing the marketplace entry at "./" makes the repository root itself the
+    plugin. Claude Code auto-discovers skills/ at the plugin root with no skills
+    key in plugin.json (observed: `claude plugin details agent-kit` reports all
+    seven), and .codex-plugin/plugin.json declares the same tree with "skills":
+    "./skills/". So both harnesses read the one canonical skills/ directory and
+    nothing is duplicated in the repository.
+
+    The payoff is that `claude plugin marketplace add` and `codex plugin
+    marketplace add` both work against a plain checkout or a git URL, with no
+    release-archive round trip. dist/ still contains self-contained per-harness
+    plugin trees for the tarball, because a tarball has no repository root to
+    point at.
+
+    Consequence to keep in mind: when Codex installs from a local path it copies
+    the whole marketplace root into its plugin cache, .git included.
+  anchor:
+    scope: excerpt
+    excerpt: '      "source": "./",'
+    before: |2-
+        "plugins": [
+          {
+            "name": "agent-kit",
+    after: |2-
+            "description": "One versioned batch of agent skills that loads identically in Claude Code, Codex and OpenCode."
+          }
+        ]
+  author:
+    name: claude-code
+    kind: agent
+    source: session
+status:
+  lastSeenLine: 11
+  resolution: ok
+  resolvedAt: "2026-08-26T09:29:04Z"
+  resolvedCommit: dc5c2adee9bd68773e2e2bff62e637ac0082931b

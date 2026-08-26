@@ -1,0 +1,19 @@
+{
+  "name": "agent-kit",
+  "interface": {
+    "displayName": "Agent Kit"
+  },
+  "plugins": [
+    {
+      "name": "agent-kit",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

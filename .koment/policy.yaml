@@ -36,6 +36,10 @@ spec:
       - '**/.cache/**'
       - .koment/**
       - '**/.koment/**'
+      - .vendor-cache/**
+      - '**/.vendor-cache/**'
+      - release/**
+      - skills/**
   agents:
     adapters:
       - claude

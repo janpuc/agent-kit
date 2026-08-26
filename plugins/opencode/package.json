@@ -1,0 +1,26 @@
+{
+  "name": "@janpuc/agent-kit-opencode",
+  "version": "0.1.0",
+  "description": "OpenCode plugin that contributes the agent-kit skill batch.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "skills"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/janpuc/agent-kit",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janpuc/agent-kit.git"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "skills",
+    "agents"
+  ]
+}

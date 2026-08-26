@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01M0YPDSD3AKBMQQ201QNH8VHX
+  created: "2026-08-26T09:29:08Z"
+spec:
+  target:
+    file: .codex-plugin/plugin.json
+  type: gotcha
+  title: A skills path outside the plugin root installs clean and ships nothing
+  body: |-
+    This path must stay inside the plugin root. It was tested with
+    "../../skills/" against codex-cli 0.149.0: `codex plugin add` reported
+    success and returned a normal installedPath, but the install cache contained
+    only plugin.json. No skill was copied and no warning was printed.
+
+    That is why the build copies the canonical skills into every dist plugin
+    tree rather than referencing them across directories, and why the repository
+    root is the plugin root here — the only path that satisfies the rule
+    without a second committed copy of skills/.
+
+    The failure is silent, so it will not show up as a build error. It shows up
+    as a plugin that installs and does nothing.
+  anchor:
+    scope: excerpt
+    excerpt: '  "skills": "./skills/",'
+    before: |2-
+          "codex",
+          "opencode"
+        ],
+    after: |2-
+        "interface": {
+          "displayName": "Agent Kit",
+          "shortDescription": "Portable engineering skills for three harnesses",
+  author:
+    name: claude-code
+    kind: agent
+    source: session
+status:
+  lastSeenLine: 19
+  resolution: ok
+  resolvedAt: "2026-08-26T09:29:08Z"
+  resolvedCommit: dc5c2adee9bd68773e2e2bff62e637ac0082931b

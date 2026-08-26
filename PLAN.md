@@ -1,7 +1,8 @@
 # agent-kit — implementation plan
 
-Status: scaffold. Nothing is built yet. This document is the brief for the next
-agent session.
+Status: built at 0.1.0. Phases 0 to 6 are complete; section 9 records the
+observed answers that shaped phases 3 and 4. This document remains the brief for
+the next agent session.
 
 ## 1. Purpose
 
@@ -59,6 +60,14 @@ serves all three. A distribution must write to both `.agents/skills` and
 (`s.skills[name]`), so a skill present in both paths is deduplicated rather than
 loaded twice.
 
+Confirmed by running each harness against a fixture holding the same skill in
+`.claude/skills`, `.agents/skills` and `.opencode/skills`: Codex saw only the
+`.agents` copy, OpenCode saw all three and reported the shared name once, and
+both also read their user-scope roots (`~/.agents/skills`,
+`$CLAUDE_CONFIG_DIR/skills`). Placing the built `dist/skills/` in both project
+paths gives Codex six of seven and OpenCode seven of seven, the discrepancy
+being `triage` alone for the reason in section 9.
+
 ### 3.2 SKILL.md is one format
 
 The format is identical across all three harnesses. koment's own Claude and
@@ -82,6 +91,15 @@ engineering skill, so those skills are already dual-harness. Any skill whose
 value depends on a Claude-only `agents/*.md` will degrade on Codex and OpenCode;
 say so in its entry in the lockfile rather than pretending it is portable.
 
+As vendored, **no skill in this batch carries a Claude-only `agents/*.md`**, so
+this degradation does not currently apply to anything. `lock.py` detects such a
+file and records it automatically, so the claim stays true rather than remembered.
+
+The `agents/openai.yaml` files are not subagent definitions. They carry a Codex
+`interface` block, and in `triage` a `policy` block whose
+`allow_implicit_invocation: false` changes what the harness advertises. Treat
+this file as Codex-facing behaviour, not decoration.
+
 ### 3.4 Plugin systems
 
 | | Claude Code | Codex | OpenCode |
@@ -97,9 +115,20 @@ Codex manifest declares `"skills": "./skills/"` explicitly. koment's OpenCode
 integration is an npm package with a JS entrypoint and no skills at all.
 
 OpenCode has a third route worth knowing about: its config accepts a `skills`
-array of directory paths **or http(s) URLs**
-(`packages/core/src/config/plugin/skill.ts`). That is the only remote-fetch
-skill channel of the three.
+object with a `paths` array of directories **and a `urls` array of http(s)
+endpoints**. The published schema at `https://opencode.ai/config.json` shows an
+object, not the bare array assumed before; `urls` is the only remote-fetch skill
+channel of the three.
+
+An OpenCode plugin can also contribute skills, indirectly: its `config` hook
+receives the resolved config and can append to `skills.paths`. That is how
+`plugins/opencode` ships this batch.
+
+Two corrections to the table below, both observed. A Codex marketplace entry's
+`source` must be an object (`{"source": "local", "path": "./"}`); a bare string
+is accepted and then yields no plugins. And Codex namespaces plugin-provided
+skills as `<plugin>:<skill>`, so `tdd` installed through the plugin is invoked as
+`agent-kit:tdd`, while the same skill placed in `.agents/skills` is just `tdd`.
 
 ## 4. The skill set
 
@@ -142,19 +171,31 @@ agent-kit/
 ├── .koment/policy.yaml           comment policy
 ├── skills/<name>/SKILL.md        canonical, harness-neutral. Source of truth.
 ├── vendor/<name>/<sha>/          verbatim upstream. Never edited.
-├── plugins/
-│   ├── claude/.claude-plugin/plugin.json
-│   ├── codex/.codex-plugin/plugin.json
-│   └── opencode/{package.json,plugin.json,index.js}
+├── sources.json                  upstream coordinates; hand-edited intent
+├── .claude-plugin/plugin.json         repo root IS the Claude plugin
 ├── .claude-plugin/marketplace.json    repo root as a Claude marketplace
+├── .codex-plugin/plugin.json          repo root IS the Codex plugin
 ├── .agents/plugins/marketplace.json   repo root as a Codex marketplace
+├── plugins/opencode/{package.json,index.js}
 ├── scripts/                      build and verification
+├── release/                      generated, gitignored
 ├── dist/                         generated, gitignored
 └── .github/workflows/            validate and release
 ```
 
 The rule that keeps this honest: `skills/` is authored, `vendor/` is evidence,
 `dist/` is generated. Nothing is edited in two places.
+
+**This differs from the sketch above in one way, and the reason matters.** There
+are no `plugins/claude/` and `plugins/codex/` directories. A plugin only ships
+the skills inside its own root, and Codex silently ships nothing when the path
+escapes that root (section 9, question 2), so those directories would each have
+needed a committed second copy of `skills/` — the duplication this repository
+exists to prevent. Putting the two manifests at the repository root instead makes
+the root itself the plugin, so both harnesses read the one canonical `skills/`.
+The self-contained per-harness trees the tarball needs are still produced, as
+`dist/plugins/{claude,codex,opencode}/`, because a tarball has no repository root
+to point at.
 
 ## 6. Versioning
 
@@ -191,6 +232,9 @@ and record the reasoning with `koment add`.
 *Accepts when:* every question in section 9 is answered with an observed
 command output rather than a reading of the docs.
 
+**Done.** Section 9 carries all six answers plus one unasked-for finding, each
+from a command run in an isolated config directory.
+
 ### Phase 1 — Vendor and canonicalise
 
 Fetch each upstream skill tree at a pinned commit into
@@ -202,6 +246,13 @@ must be justified in a koment annotation.
 `vendor/` tree, and every `SKILL.md` satisfies the OpenCode frontmatter rules in
 section 3.2.
 
+**Done.** `just vendor` rebuilds all seven from `sources.json`. All 28 vendored
+files were checked byte-for-byte against `git show <sha>:<path>`, and each
+canonical tree is identical to its vendored counterpart, so there is no
+divergence from upstream to justify. `assert_portable_skill` enforces the
+section 3.2 rules plus two the harnesses taught us: no nested `SKILL.md` (OpenCode
+loads it as a separate skill) and no symlinks.
+
 ### Phase 2 — Lockfile and version
 
 Generate `agent-kit.lock.json` from `vendor/` and `skills/`. Set `VERSION` to
@@ -209,6 +260,8 @@ Generate `agent-kit.lock.json` from `vendor/` and `skills/`. Set `VERSION` to
 
 *Accepts when:* the lockfile round-trips — regenerating it on a clean tree
 produces no diff.
+
+**Done.** `just lock-check` regenerates and compares; it is part of `just ci`.
 
 ### Phase 3 — Build
 
@@ -226,6 +279,12 @@ The build must emit, at minimum:
 *Accepts when:* `just build` on a clean checkout produces a `dist/` whose
 per-file sha256 set matches the lockfile.
 
+**Done.** `just verify` compares all 93 `dist/` files against the lockfile's
+`distribution` map and additionally asserts that each skill file is identical in
+all four places it lands. The lockfile is generated by building into a temporary
+directory, so it is reproducible from committed sources alone with no build
+ordering trap.
+
 ### Phase 4 — Plugin manifests
 
 Write the three manifests against the formats in section 3.4. Expect the Codex
@@ -234,6 +293,12 @@ Claude manifest to need nothing beyond identity if auto-discovery holds.
 
 *Accepts when:* the plugin installs cleanly in each harness via that harness's
 own command, and the skills appear in that harness's skill listing.
+
+**Done.** Claude reports `Skills (7)` and ~357 always-on tokens for the batch;
+Codex installs seven and advertises six, withholding `triage` by upstream's
+instruction; OpenCode lists seven through the plugin's config hook. The Claude
+manifest needed identity only, as predicted; the Codex manifest needed both
+`"skills": "./skills/"` and an `interface` block, also as predicted.
 
 ### Phase 5 — Release automation
 
@@ -244,6 +309,14 @@ A workflow that, on tag, builds `dist/`, packs the tarball, writes
 with `gh release download --pattern` and verify with `sha256sum --check`,
 end to end, from a machine that has never seen the repository.
 
+**Done, with one part left to the first real tag.** `.github/workflows/release.yml`
+refuses a tag that disagrees with `VERSION`, runs `just ci`, packs, and attaches
+both artifacts. `just package` produces a byte-reproducible tarball, verified by
+packing twice and comparing digests, so the published sha256 identifies the
+content rather than the build machine. The extract-and-verify half was rehearsed
+locally: `sha256sum --check` passes and all three harnesses install from the
+extracted tree. Only the GitHub-side upload awaits an actual tag push.
+
 ### Phase 6 — Prove the three-harness claim
 
 For each of Claude Code, Codex and OpenCode: install from the release artifact,
@@ -251,6 +324,20 @@ start a session, confirm the skills are listed and one of them can be invoked.
 
 *Accepts when:* three transcripts exist showing the same skill loading in three
 harnesses at the same version. Until then requirement 1 is unproven.
+
+**Done for loading.** From one extracted `agent-kit_v0.1.0.tar.gz`, with a
+verified checksum, in three isolated config directories:
+
+- Claude Code 2.1.241 — `claude plugin details agent-kit` lists all seven.
+- codex-cli 0.149.0 — `codex debug prompt-input` shows six as
+  `agent-kit:<name>`; `triage` is installed and withheld from implicit
+  invocation on purpose.
+- OpenCode 1.18.21 — `opencode debug skill` lists all seven from
+  `plugins/opencode/skills/`.
+
+The same artifact also loads through the plain directory route: six in Codex from
+`.agents/skills/`, seven in OpenCode with the `.claude` and `.agents` copies
+deduplicated to one each.
 
 ## 8. Non-goals
 
@@ -263,30 +350,53 @@ harnesses at the same version. Until then requirement 1 is unproven.
 - **No MCP servers.** MCP is already unified elsewhere through a LiteLLM
   gateway. This repository ships skills and plugin manifests only.
 
-## 9. Open questions
+## 9. Open questions — answered
 
-These need an observed answer before Phase 3 is designed in detail. None of them
-is blocking Phase 1.
+Answered on 2026-08-26 against Claude Code 2.1.241, codex-cli 0.149.0 and
+OpenCode 1.18.21, each in an isolated config directory. Every answer below is an
+observed command result, not a reading of the docs.
 
-1. Can one repository root serve as **both** a Claude marketplace and a Codex
-   marketplace at once — `.claude-plugin/marketplace.json` and
-   `.agents/plugins/marketplace.json` side by side? Test:
-   `claude plugin marketplace add .` and `codex plugin marketplace add .` in the
-   same checkout.
-2. Does Codex's `"skills": "./skills/"` accept a path **outside** the plugin
-   root, such as `"../../skills/"`? If yes, the build can stop copying. Assume
-   no until observed.
-3. Does Claude Code really auto-discover `skills/` in a plugin with no skills
-   key in the manifest? `skill-creator` implies yes; confirm.
-4. Can an OpenCode **plugin** contribute skills, or is the config `skills` array
-   the only route? If the latter, the OpenCode plugin is a thin shim and the
-   real delivery is the `.agents/skills` path.
-5. Do Claude and Codex tolerate OpenCode's optional frontmatter fields
-   (`compatibility`, `metadata`) or warn on them?
-6. Does `codex plugin marketplace add` accept a **git** source pointing at this
-   repository directly, avoiding the release-archive round trip that koment
-   needs? koment uses a local path; the config schema shows
-   `source_type = "git"` is supported.
+1. **Can one repository root be both a Claude and a Codex marketplace? Yes.**
+   `claude plugin marketplace add ./` and `codex plugin marketplace add .` both
+   succeed on the same checkout with `.claude-plugin/marketplace.json` and
+   `.agents/plugins/marketplace.json` side by side, and both installs then
+   resolve the plugin. Codex needs its entry's `source` to be an object,
+   `{"source": "local", "path": "./"}`; given a bare string it accepts the
+   marketplace and then lists no plugins at all.
+
+2. **Does Codex accept a skills path outside the plugin root? No.** With
+   `"skills": "../../skills/"`, `codex plugin add` reports success and returns a
+   normal `installedPath`, but the install cache holds only `plugin.json`. No
+   skill is copied and nothing is logged. The build therefore copies skills into
+   every plugin tree, and the repository root is the plugin root.
+
+3. **Does Claude auto-discover `skills/` with no skills key? Yes.**
+   `claude plugin details agent-kit` reports `Skills (7)` from a manifest that
+   declares identity only.
+
+4. **Can an OpenCode plugin contribute skills? Yes, through its config hook.**
+   The plugin Hooks interface has nothing skill-shaped, but `config(input)`
+   receives the resolved config, and the schema carries `skills.paths`. A plugin
+   that appends its own directory there had all seven skills listed by
+   `opencode debug skill`. Note the schema is an object with `paths` and `urls`
+   arrays, not the bare array section 3.4 assumed.
+
+5. **Do Claude and Codex tolerate OpenCode's optional frontmatter? Yes.** A skill
+   carrying `license`, `compatibility`, `metadata` and `disable-model-invocation`
+   loaded in all three with no warning.
+
+6. **Does Codex accept a git marketplace source? Yes.**
+   `codex plugin marketplace add https://github.com/...` clones the repository
+   into `$CODEX_HOME/.tmp/marketplaces/<name>` and registers it with
+   `source_type = "git"`. Because the repository root is the plugin, this
+   installs the batch with no release-archive round trip.
+
+One finding that did not have a question. Codex advertises **six** of the seven
+skills. `triage` ships `agents/openai.yaml` with
+`policy: allow_implicit_invocation: false`, upstream's Codex-side counterpart to
+the `disable-model-invocation: true` in its frontmatter. Codex installs the skill
+and withholds it from the model-visible list; it stays explicitly invocable. The
+lockfile records this per harness under `invocation`.
 
 ## 10. Consumer integration, for later
 

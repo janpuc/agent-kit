@@ -1,0 +1,15 @@
+{
+  "name": "agent-kit",
+  "description": "One versioned batch of agent skills and plugin manifests for Claude Code, Codex and OpenCode.",
+  "owner": {
+    "name": "janpuc",
+    "github": "janpuc"
+  },
+  "plugins": [
+    {
+      "name": "agent-kit",
+      "source": "./",
+      "description": "One versioned batch of agent skills that loads identically in Claude Code, Codex and OpenCode."
+    }
+  ]
+}

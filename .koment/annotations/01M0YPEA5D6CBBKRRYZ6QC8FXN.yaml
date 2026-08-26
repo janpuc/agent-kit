@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01M0YPEA5D6CBBKRRYZ6QC8FXN
+  created: "2026-08-26T09:29:25Z"
+spec:
+  target:
+    file: plugins/opencode/index.js
+  type: why
+  title: A config hook is the only way a plugin can contribute skills to OpenCode
+  body: |-
+    OpenCode has no manifest field for skills the way Claude and Codex do. Its
+    plugin Hooks interface (@opencode-ai/plugin 1.18.21) exposes tool, auth,
+    provider, event and chat hooks and nothing skill-shaped, so a plugin cannot
+    declare a skill directly.
+
+    What it does expose is config(input: Config), called with the resolved
+    config before it is used, and the config schema carries skills.paths, an
+    array of additional skill folders. Appending this package's own directory
+    there is therefore the whole mechanism: verified by loading the plugin and
+    reading back `opencode debug skill`, which lists all seven skills from the
+    plugin's bundled tree.
+
+    Note the schema shape: skills is an object with paths and urls arrays, not
+    the bare array of paths that PLAN.md section 3.4 described. The urls route
+    is the only remote-fetch skill channel any of the three harnesses offers.
+
+    The directory is resolved at module load rather than per call because
+    OpenCode may invoke config more than once, and pushing a duplicate path
+    would register every skill twice.
+  anchor:
+    scope: excerpt
+    excerpt: |2-
+          config.skills ??= {}
+          config.skills.paths ??= []
+    before: |2-
+
+      export const AgentKit = async () => ({
+        config: async (config) => {
+    after: |2-
+          if (!config.skills.paths.includes(skillsDirectory)) {
+            config.skills.paths.push(skillsDirectory)
+          }
+  author:
+    name: claude-code
+    kind: agent
+    source: session
+status:
+  lastSeenLine: 12
+  resolution: ok
+  resolvedAt: "2026-08-26T09:29:25Z"
+  resolvedCommit: dc5c2adee9bd68773e2e2bff62e637ac0082931b

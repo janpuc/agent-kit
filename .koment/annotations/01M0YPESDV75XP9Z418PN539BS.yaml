@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01M0YPESDV75XP9Z418PN539BS
+  created: "2026-08-26T09:29:41Z"
+spec:
+  target:
+    file: scripts/package.py
+  type: why
+  title: Fixed tar metadata is what makes the published sha256 mean anything
+  body: |-
+    The requirement this repository exists to satisfy is that a consumer pins
+    one version and verifies one sha256. That only holds if the same dist/
+    always packs to the same bytes.
+
+    Left alone, tar records each file's mtime, uid, gid, owner names and mode,
+    and gzip additionally records its own timestamp and the source filename in
+    the stream header. All of those vary between a laptop, a container and a CI
+    runner, so the archive digest would change without a single skill changing.
+    Normalising every field, and passing filename="" with an explicit mtime to
+    GzipFile, removes that variance: two builds of the same tree produce
+    identical archives, verified by packing twice and comparing digests.
+
+    315532800 is 1980-01-01, chosen over 0 because some archive tooling rejects
+    pre-1980 timestamps.
+
+    Entry order is deterministic because tracked_files sorts; without that the
+    digest would depend on directory iteration order.
+  anchor:
+    scope: excerpt
+    excerpt: REPRODUCIBLE_MTIME = 315532800
+    before: |-
+      from kit import DIST_ROOT, REPO_ROOT, read_version, sha256_of, tracked_files
+
+      RELEASE_ROOT = REPO_ROOT / "release"
+    after: |-
+      FILE_MODE = 0o644
+      DIRECTORY_MODE = 0o755
+      OWNER_UID = 0
+  author:
+    name: claude-code
+    kind: agent
+    source: session
+status:
+  lastSeenLine: 14
+  resolution: ok
+  resolvedAt: "2026-08-26T09:29:41Z"
+  resolvedCommit: dc5c2adee9bd68773e2e2bff62e637ac0082931b

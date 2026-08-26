@@ -1,0 +1,60 @@
+{
+  "upstreams": {
+    "mattpocock-skills": {
+      "repository": "https://github.com/mattpocock/skills",
+      "commit": "6654f6b60cd9d5be8b54c6fafe44346dabeb3b76",
+      "license": "MIT",
+      "licenseFiles": ["LICENSE"]
+    },
+    "andrej-karpathy-skills": {
+      "repository": "https://github.com/multica-ai/andrej-karpathy-skills",
+      "commit": "2c606141936f1eeef17fa3043a72095b4765b9c2",
+      "license": "MIT",
+      "licenseFiles": ["README.md"]
+    }
+  },
+  "skills": [
+    {
+      "name": "writing-for-agents",
+      "upstream": "mattpocock-skills",
+      "path": "skills/productivity/writing-for-agents",
+      "requires": []
+    },
+    {
+      "name": "diagnosing-bugs",
+      "upstream": "mattpocock-skills",
+      "path": "skills/engineering/diagnosing-bugs",
+      "requires": []
+    },
+    {
+      "name": "research",
+      "upstream": "mattpocock-skills",
+      "path": "skills/engineering/research",
+      "requires": []
+    },
+    {
+      "name": "tdd",
+      "upstream": "mattpocock-skills",
+      "path": "skills/engineering/tdd",
+      "requires": ["codebase-design"]
+    },
+    {
+      "name": "codebase-design",
+      "upstream": "mattpocock-skills",
+      "path": "skills/engineering/codebase-design",
+      "requires": []
+    },
+    {
+      "name": "triage",
+      "upstream": "mattpocock-skills",
+      "path": "skills/engineering/triage",
+      "requires": ["grilling", "domain-modeling"]
+    },
+    {
+      "name": "karpathy-guidelines",
+      "upstream": "andrej-karpathy-skills",
+      "path": "skills/karpathy-guidelines",
+      "requires": []
+    }
+  ]
+}

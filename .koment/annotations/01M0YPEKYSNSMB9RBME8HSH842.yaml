@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01M0YPEKYSNSMB9RBME8HSH842
+  created: "2026-08-26T09:29:35Z"
+spec:
+  target:
+    file: sources.json
+  type: gotcha
+  title: triage is explicit-only in Codex, so six of seven is correct
+  body: |-
+    Two things about triage look like defects and are not.
+
+    First, Codex advertises six skills from this batch, not seven. triage ships
+    agents/openai.yaml carrying `policy: allow_implicit_invocation: false`,
+    which is upstream's Codex-side equivalent of the `disable-model-invocation:
+    true` in its SKILL.md frontmatter. Codex installs the skill and hides it
+    from the model-visible list so the model cannot fire it on its own. Claude
+    honours the frontmatter key and Codex honours the yaml; the two are ignored
+    by each other's harness, which is why upstream ships both. OpenCode reads
+    neither, so triage is implicitly invocable there. The lockfile records this
+    per harness under "invocation" so the count is not re-investigated later.
+
+    Second, these two required skills are not in this batch. PLAN.md section 4
+    excluded the productivity set and never listed domain-modeling. Step 4 of
+    triage's own procedure calls the Skill tool for them, so that step degrades
+    in all three harnesses. It is a conditional step ("if needed"), so the rest
+    of the skill still works. lock.py computes this from the requires list and
+    records it as an unsatisfied-skill-reference degradation rather than quietly
+    editing upstream text or silently widening the batch.
+  anchor:
+    scope: excerpt
+    excerpt: '      "requires": ["grilling", "domain-modeling"]'
+    before: |2-
+            "name": "triage",
+            "upstream": "mattpocock-skills",
+            "path": "skills/engineering/triage",
+    after: |2-
+          },
+          {
+            "name": "karpathy-guidelines",
+  author:
+    name: claude-code
+    kind: agent
+    source: session
+status:
+  lastSeenLine: 51
+  resolution: ok
+  resolvedAt: "2026-08-26T09:29:35Z"
+  resolvedCommit: dc5c2adee9bd68773e2e2bff62e637ac0082931b
