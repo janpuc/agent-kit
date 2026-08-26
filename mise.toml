@@ -1,0 +1,6 @@
+[settings]
+experimental = true
+
+[tools]
+"github:koment-dev/koment" = "v3.2.0"
+just = "latest"

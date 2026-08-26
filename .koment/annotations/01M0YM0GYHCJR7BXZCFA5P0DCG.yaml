@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01M0YM0GYHCJR7BXZCFA5P0DCG
+  created: "2026-08-26T08:46:56Z"
+spec:
+  target:
+    file: .gitignore
+  type: invariant
+  title: dist is generated; committing it creates a second source of truth
+  body: |-
+    dist/ is materialised by the build from skills/ plus the plugin manifests.
+    If it were committed, a plausible-looking SKILL.md would exist in two places
+    and the next agent would eventually edit the wrong one; the copy under dist/
+    would win in whichever harness happened to load it, and the divergence would
+    be invisible until someone diffed them.
+
+    AGENTS.md states the rule as "skills/ is authored, vendor/ is evidence,
+    dist/ is generated". This line is what enforces it mechanically.
+
+    The build uses copies rather than symlinks for the same reason it is not
+    committed: symlinks do not survive tar extraction predictably, and
+    t3-docker's provisioner rejects a managed skill tree that contains one.
+  anchor:
+    scope: excerpt
+    excerpt: dist/
+    after: |-
+      node_modules/
+      .DS_Store
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+status:
+  lastSeenLine: 1
+  resolution: ok
+  resolvedAt: "2026-08-26T08:46:56Z"

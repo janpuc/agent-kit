@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01M0YM0GVYF5YFKVMK7QZV4EBX
+  created: "2026-08-26T08:46:56Z"
+spec:
+  target:
+    file: VERSION
+  type: why
+  title: One semver for the whole batch, never per skill
+  body: |-
+    The requirement this repository was created to satisfy is "one batch version
+    plus one sha". Per-skill versions would defeat it: a consumer would have to
+    pin seven strings and reason about which combination it had ever tested
+    together.
+
+    One number covers the whole set, so "which skills is this cluster running"
+    has a single answer, and a release is a set that was proven to load together
+    in all three harnesses rather than an arbitrary mix of
+    independently-versioned parts.
+
+    Adding, removing or editing any skill bumps this file. Upstream provenance
+    for the individual skills lives in agent-kit.lock.json, which is where
+    per-skill drift is tracked without turning it into a version a consumer must
+    pin.
+  anchor:
+    scope: excerpt
+    excerpt: 0.1.0
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+status:
+  lastSeenLine: 1
+  resolution: ok
+  resolvedAt: "2026-08-26T08:46:56Z"

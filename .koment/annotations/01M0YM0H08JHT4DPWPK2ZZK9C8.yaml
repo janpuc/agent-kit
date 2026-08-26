@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/koment-dev/koment/main/schema/v1alpha/annotation.schema.json
+apiVersion: koment.dev/v1alpha
+kind: Annotation
+metadata:
+  id: 01M0YM0H08JHT4DPWPK2ZZK9C8
+  created: "2026-08-26T08:46:57Z"
+spec:
+  target:
+    file: mise.toml
+  type: why
+  title: Pinned to 3.2.0 because earlier koment cannot police this repo
+  body: |-
+    koment 3.0.0 was the release that added comment detectors beyond Go,
+    covering YAML, TOML, shell, Just and JSON5. Before it, "koment comments
+    check" walked only *.go, which in a repository that is almost entirely
+    Markdown, JSON and TOML would exit zero and prove nothing.
+
+    3.2.0 specifically is the version deployed on the cluster that will consume
+    this repository, so pinning it here keeps the gate that runs locally
+    identical to the gate that runs there.
+  anchor:
+    scope: excerpt
+    excerpt: '"github:koment-dev/koment" = "v3.2.0"'
+    before: |-
+      experimental = true
+
+      [tools]
+    after: just = "latest"
+  author:
+    name: janpuc
+    email: janpuc@proton.me
+    kind: agent
+    source: git-config
+status:
+  lastSeenLine: 5
+  resolution: ok
+  resolvedAt: "2026-08-26T08:46:57Z"
